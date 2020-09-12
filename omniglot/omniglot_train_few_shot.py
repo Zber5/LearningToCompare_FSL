@@ -23,8 +23,8 @@ parser = argparse.ArgumentParser(description="One Shot Visual Recognition")
 parser.add_argument("-f", "--feature_dim", type=int, default=64)
 parser.add_argument("-r", "--relation_dim", type=int, default=8)
 parser.add_argument("-w", "--class_num", type=int, default=5)
-parser.add_argument("-s", "--sample_num_per_class", type=int, default=5)
-parser.add_argument("-b", "--batch_num_per_class", type=int, default=5)
+parser.add_argument("-s", "--sample_num_per_class", type=int, default=1)
+parser.add_argument("-b", "--batch_num_per_class", type=int, default=1)
 parser.add_argument("-e", "--episode", type=int, default=2000*32)
 parser.add_argument("-t", "--test_episode", type=int, default=100*32)
 parser.add_argument("-l", "--learning_rate", type=float, default=0.001)
@@ -43,9 +43,10 @@ TEST_EPISODE = args.test_episode
 LEARNING_RATE = args.learning_rate
 GPU = args.gpu
 HIDDEN_UNIT = args.hidden_unit
-MNIST_ROOT = "/Users/zber/ProgramDev/MAML-Pytorch/MNIST"
+MNIST_ROOT = "C:\\Users\\Zber\\Documents\\Dev_program\\MAML-Pytorch\\MNIST"
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+# device = 'cpu'
 
 
 class CNNEncoder(nn.Module):
@@ -234,6 +235,16 @@ def test_mnist(feature_encoder, relation_network):
     print("test accuracy:", acc_average.avg)
 
 
+def to_one_hot(y, n_dims=None):
+    """ Take integer y (tensor or variable) with n dims and convert it to 1-hot representation with n+1 dims. """
+    y_tensor = y.data if isinstance(y, Variable) else y
+    y_tensor = y_tensor.type(torch.LongTensor).view(-1, 1)
+    n_dims = n_dims if n_dims is not None else int(torch.max(y_tensor)) + 1
+    y_one_hot = torch.zeros(y_tensor.size()[0], n_dims).scatter_(1, y_tensor, 1)
+    y_one_hot = y_one_hot.view(*y.shape, -1)
+    return Variable(y_one_hot) if isinstance(y, Variable) else y_one_hot
+
+
 def main():
     # Step 1: init data folders
     print("init data folders")
@@ -304,7 +315,10 @@ def main():
         relations = relation_network(relation_pairs).view(-1, CLASS_NUM)
 
         mse = nn.MSELoss().to(device)
-        one_hot_labels = Variable(torch.zeros(BATCH_NUM_PER_CLASS * CLASS_NUM, CLASS_NUM).scatter_(1, batch_labels.view(-1, 1), 1)).to(device)
+        # one_hot_labels = torch.zeros(BATCH_NUM_PER_CLASS * CLASS_NUM, CLASS_NUM).scatter_(1, batch_labels.view(-1, 1), 1).to(device)
+        one_hot_labels = to_one_hot(batch_labels, n_dims=5).to(device)
+        # one_hot_labels =  torch.nn.functional.one_hot(batch_labels.view(-1,1), num_classes=5).to(device)
+
         loss = mse(relations, one_hot_labels)
 
         # training
@@ -321,7 +335,7 @@ def main():
         relation_network_optim.step()
 
         if (episode + 1) % 100 == 0:
-            print("episode:", episode + 1, "loss", loss.data[0])
+            print("episode:", episode + 1, "loss", loss.data.tolist())
 
         if (episode + 1) % 5000 == 0:
 

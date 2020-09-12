@@ -29,7 +29,7 @@ class Rotate(object):
 
 
 def omniglot_character_folders():
-    data_folder = '../datas/omniglot_resized/'
+    data_folder = '..\\datas\\omniglot_resized\\'
 
     character_folders = [os.path.join(data_folder, family, character) \
                          for family in os.listdir(data_folder) \
@@ -75,7 +75,7 @@ class OmniglotTask(object):
         self.test_labels = [labels[self.get_class(x)] for x in self.test_roots]
 
     def get_class(self, sample):
-        return os.path.join(*sample.split('/')[:-1])
+        return os.path.join(*sample.split('\\')[:-1])
 
 
 class FewShotDataset(Dataset):
