@@ -55,11 +55,12 @@ class MnistNShot:
         # TODO: can not shuffle here, we must keep training and test set distinct!
         self.x_train, self.x_test = self.x[:10], self.x[0:]
 
-        self.normalization()
+        # scale to 1
+        self.x_train /= 255.
+        self.x_test /= 255.
 
         # normalization manually
-        # self.x_train /= 255.
-        # self.x_test /= 255.
+        self.normalization()
 
         self.batchsz = batchsz
         self.n_cls = self.x.shape[0]  # 1623
